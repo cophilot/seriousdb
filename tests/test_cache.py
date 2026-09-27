@@ -31,6 +31,17 @@ def test_flush_failure_does_not_corrupt_existing_file(
     assert db_file.read_bytes() == original_content
 
 
+def test_none_value_handling(tmp_path: Path):
+    db_file = tmp_path / "database.sdb"
+    cache = Cache()
+    cache.load(str(db_file))
+    with pytest.raises(ValueError):
+        cache.insert("key_with_none", None)  # ty: ignore[invalid-argument-type]
+
+    cache.insert("key_with_empty", "")  # Verify empty string is allowed
+    assert cache.select("key_with_empty") == ""
+
+
 def test_load_corrupt_backup_collision_preserves_backups(
     tmp_path: Path, monkeypatch: MonkeyPatch
 ):

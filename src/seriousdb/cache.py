@@ -13,7 +13,11 @@ import time
 from collections.abc import Callable
 from threading import Lock
 
-from .exceptions import ResourceNotFoundError, ServiceUnavailableError
+from .exceptions import (
+    CorruptDatabaseError,
+    ResourceNotFoundError,
+    ServiceUnavailableError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +70,11 @@ class Cache:
         ------
         ServiceUnavailableError
             If no database has been loaded.
+        ValueError
+            If `value` is ``None``.
         """
+        if value is None:
+            raise ValueError("Cannot store None as a value")
         with self.lock:
             db = require_db(self)
             is_new_key = key not in db
@@ -160,9 +168,16 @@ class Cache:
                             raise TypeError(
                                 f"expected dict, got {type(self.db).__name__}"
                             )
+                        if _check_db_for_corruption(self.db):
+                            raise CorruptDatabaseError()
                         logger.info("Loaded database from %s", filename)
 
-                except (json.JSONDecodeError, UnicodeDecodeError, TypeError) as e:
+                except (
+                    json.JSONDecodeError,
+                    UnicodeDecodeError,
+                    TypeError,
+                    CorruptDatabaseError,
+                ) as e:
                     backup = _generate_corrupt_backup_path(filename)
                     os.replace(filename, backup)
                     logger.warning(
@@ -203,6 +218,29 @@ def _write_default(filename: str) -> dict[str, str]:
     with open(filename, "wb") as f:
         f.write(json.dumps(DEFAULT_DB).encode())
     return dict(DEFAULT_DB)
+
+
+def _check_db_for_corruption(db: dict[str, str]) -> bool:
+    """Check if the database is corrupt.
+
+    A database is considered corrupt if any of its values are ``None``.
+
+    Parameters
+    ----------
+    db : dict of str to str
+        The database to check.
+
+    Returns
+    -------
+    bool
+        ``True`` if the database is corrupt, ``False`` otherwise.
+    """
+    if db is None:
+        return False
+    for value in db.values():
+        if value is None:
+            return True
+    return False
 
 
 def _generate_corrupt_backup_path(filename: str) -> str:

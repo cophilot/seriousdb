@@ -55,6 +55,8 @@ def test_none_value_handling(tmp_path: Path, monkeypatch: MonkeyPatch):
     backup_path = tmp_path / f"database.sdb.corrupt-{int(fixed_timestamp)}"
 
     assert backup_path.exists(), f"Expected {backup_path} to exist"
+    assert cache.db == {}
+    assert json.loads(db_file.read_bytes()) == {}
 
 
 def test_load_corrupt_backup_collision_preserves_backups(

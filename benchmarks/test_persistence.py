@@ -23,7 +23,10 @@ def test_batch_write_and_persist(
     entries: Entries,
     measured_rounds: int,
 ) -> None:
-    """Measure creating a database, inserting every entry, and flushing once."""
+    """Measure creating a database, inserting every entry, and flushing once.
+
+    File removal and verification of the reopened database are untimed.
+    """
 
     def prepare_database():
         """Remove the last round's file before the next timer starts."""
@@ -45,7 +48,7 @@ def test_batch_write_and_persist(
     benchmark.extra_info["file_bytes"] = database_file.stat().st_size
 
 
-@pytest.mark.benchmark(group="seriousdb-flush")
+@pytest.mark.benchmark(group="seriousdb-insert")
 def test_flush(
     benchmark,
     loaded_cache: Cache,
@@ -53,25 +56,26 @@ def test_flush(
     entries: Entries,
     measured_rounds: int,
 ) -> None:
-    """Measure serializing and flushing an already loaded cache to its file."""
+    """Measure appending one write to the write-ahead log."""
     expected = dict(entries)
     changed_key = entries[0][0]
 
-    def prepare_flush():
-        """Change one value outside timing so flush has new state to persist."""
+    def prepare_write():
+        """Change one value outside timing so there's new state to write."""
         # Keeping the value the same size avoids changing the workload each round.
         expected[changed_key] = expected[changed_key][::-1]
+
+    def do_write():
         loaded_cache.insert(changed_key, expected[changed_key])
 
     def verify():
-        """Reopen the file outside timing and check the changed value arrived."""
+        """Reopen the database so verification cannot pass from cached state alone."""
         verify_persisted(database_file, tuple(expected.items()))
 
-    benchmark.extra_info["persistence"] = "Cache.flush without fsync"
-    # Only loaded_cache.flush is timed; mutation and disk verification are not.
+    benchmark.extra_info["persistence"] = "Cache.insert (WAL append + fsync)"
     benchmark.pedantic(
-        loaded_cache.flush,
-        setup=prepare_flush,
+        do_write,
+        setup=prepare_write,
         teardown=verify,
         rounds=measured_rounds,
         warmup_rounds=WARMUP_ROUNDS,
@@ -95,7 +99,10 @@ def test_update_and_persist(
     measured_rounds: int,
     flush_every: int,
 ) -> None:
-    """Measure 100 overwrites with either one flush per write or one per batch."""
+    """Measure 100 overwrites with either one flush per write or one per batch.
+
+    Restoring original values and checking the cache and reopened file are untimed.
+    """
     # A fixed operation count isolates the cost of the existing database size.
     originals = entries[:100]
     updates = tuple((key, value[::-1]) for key, value in originals)

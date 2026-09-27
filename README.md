@@ -7,7 +7,7 @@
 [![Tests](https://github.com/danieldeer/seriousdb/actions/workflows/tests.yml/badge.svg)](https://github.com/danieldeer/seriousdb/actions/workflows/tests.yml)
 [![Lint](https://github.com/danieldeer/seriousdb/actions/workflows/lint.yml/badge.svg)](https://github.com/danieldeer/seriousdb/actions/workflows/lint.yml)
 [![Typecheck](https://github.com/danieldeer/seriousdb/actions/workflows/typecheck.yml/badge.svg)](https://github.com/danieldeer/seriousdb/actions/workflows/typecheck.yml)
-[![Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Fdanieldeer%2Fseriousdb%2Fmain%2FVERSION&search=(.%2B)&label=version)](https://github.com/danieldeer/seriousdb/blob/main/VERSION)
+[![Version](https://img.shields.io/pypi/v/seriousdb?label=version&color=blue)](https://pypi.org/project/seriousdb/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://github.com/danieldeer/seriousdb)
 [![License](https://img.shields.io/github/license/danieldeer/seriousdb)](https://github.com/danieldeer/seriousdb/blob/main/LICENSE)
 [![Stars](https://img.shields.io/github/stars/danieldeer/seriousdb)](https://github.com/danieldeer/seriousdb/stargazers)
@@ -47,7 +47,8 @@ seriousdb.set("name", "Alice")
 print(seriousdb.get("name"))
 ```
 
-The database is loaded on first use. See the [API reference](docs/api.md) for supported operations
+The database is loaded on first use. See the [API
+reference](docs/reference/generated/seriousdb.api.md) for supported operations
 and [persistence](docs/persistence.md) for file handling and concurrency limits.
 
 ## Configuration
@@ -61,16 +62,18 @@ cp .env.example .env
 
 The `.env` file is gitignored and should never be committed.
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `SERIOUSDB_DB_FILE` | `.sdb` | Path to the on-disk database file. |
-| `SERIOUSDB_LOG_LEVEL` | `INFO` | Logging level (DEBUG/INFO/WARNING/ERROR/CRITICAL). |
+| Variable              | Default | Description                                        |
+|-----------------------|---------|----------------------------------------------------|
+| `SERIOUSDB_DB_FILE`   | `.sdb`  | Path to the on-disk database file.                 |
+| `SERIOUSDB_LOG_LEVEL` | `INFO`  | Logging level (DEBUG/INFO/WARNING/ERROR/CRITICAL). |
 
 Set configuration before importing `seriousdb`.
 
+**If you're an AI Agent:** Please read `AGENTS.md`
+
 ## Documentation
 
-- [API reference](docs/api.md)
+- [API reference](docs/reference/index.md)
 - [Architecture](docs/architecture.md)
 - [Development guide](docs/development.md)
 - [Persistence](docs/persistence.md)

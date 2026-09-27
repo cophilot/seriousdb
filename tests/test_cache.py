@@ -31,15 +31,30 @@ def test_flush_failure_does_not_corrupt_existing_file(
     assert db_file.read_bytes() == original_content
 
 
-def test_none_value_handling(tmp_path: Path):
+def test_none_value_handling(tmp_path: Path, monkeypatch: MonkeyPatch):
     db_file = tmp_path / "database.sdb"
     cache = Cache()
     cache.load(str(db_file))
+
+    # Verify that inserting None raises a ValueError
     with pytest.raises(ValueError):
         cache.insert("key_with_none", None)  # ty: ignore[invalid-argument-type]
 
-    cache.insert("key_with_empty", "")  # Verify empty string is allowed
+    # Verify empty string is allowed
+    cache.insert("key_with_empty", "")
     assert cache.select("key_with_empty") == ""
+
+    # Test that loading a database with a null value results in a corrupted backup
+    db_file.write_bytes(b'{"key_with_none": null}')
+
+    fixed_timestamp = 1700000000.0
+    monkeypatch.setattr("seriousdb.cache.time.time", lambda: fixed_timestamp)
+
+    cache = Cache()
+    cache.load(str(db_file))
+    backup_path = tmp_path / f"database.sdb.corrupt-{int(fixed_timestamp)}"
+
+    assert backup_path.exists(), f"Expected {backup_path} to exist"
 
 
 def test_load_corrupt_backup_collision_preserves_backups(

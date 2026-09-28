@@ -431,6 +431,13 @@ def test_none_value_handling(tmp_path: Path, monkeypatch: MonkeyPatch):
     assert cache2.db == {}
     assert json.loads(db_file2.read_bytes()) == {}
 
+    wal_file = tmp_path / "database2.sdb.wal"
+    wal_content = '{"op":"set","key":"k","this_should_not_exist":null}'
+
+    wal_file.write_bytes(wal_content.encode())
+    cache2.load(str(db_file2))
+    assert cache2.exists("this_should_not_exist") is False
+
 
 def test_load_corrupt_backup_collision_preserves_backups(db_path, monkeypatch):
     """Recovering from corruption twice with the same timestamp keeps both backups."""

@@ -336,6 +336,12 @@ class Cache:
             replayed = self.wal.replay()
             self._writes_since_compact = len(replayed)
             for entry in replayed:
+                if isinstance(entry, SetEntry) and entry.value is None:
+                    logger.warning(
+                        "Ignoring WAL Entry with None value for key %s during WAL replay",
+                        entry.key,
+                    )
+                    continue
                 entry.apply(require_db(self))
 
     def flush(self) -> None:
